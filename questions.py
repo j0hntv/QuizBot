@@ -3,7 +3,9 @@ import os
 def get_questions():
     path = 'quiz-questions'
     questions_files = [file for file in os.listdir(path) if os.path.splitext(file)[1] == '.txt']
-    questions = {'questions': [], 'answers': []}
+
+    questions = []
+    answers = []
     
     for questions_file in questions_files:
         current_path = os.path.join(path, questions_file)
@@ -12,9 +14,11 @@ def get_questions():
 
         for chunk in data:
             if chunk.startswith('Вопрос'):
-                questions['questions'].append(chunk)
+                question = ' '.join(chunk.split('\n')[1:])
+                questions.append(question)
 
             elif chunk.startswith('Ответ'):
-                questions['answers'].append(chunk)
+                answer = ' '.join(chunk.split('\n')[1:])
+                answers.append(answer)
 
-    return questions
+    return list(zip(questions, answers))
