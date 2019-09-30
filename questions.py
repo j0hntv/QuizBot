@@ -2,7 +2,7 @@ import os
 
 def get_questions():
     path = 'quiz-questions'
-    questions_files = [file for file in os.listdir(path) if os.path.splitext(file)[1] == '.txt']
+    questions_files = [file for file in os.listdir(path)]
 
     questions = []
     answers = []
