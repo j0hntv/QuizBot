@@ -27,7 +27,7 @@ def button(bot, update):
         update.message.reply_text(question)
 
         update.message.reply_text(f'Ответ: {answer}')
-        db.set(update.message.chat_id, question)
+        db.set(update.message.chat_id, question_number)
 
 
     elif update.message.text == 'Мой счет':
@@ -36,7 +36,23 @@ def button(bot, update):
     elif update.message.text == 'Сдаться':
         update.message.reply_text('Правильный ответ: ')
 
-    
+    else:
+        chat_id = update.message.chat_id
+        question_number = int(db.get(chat_id))
+        if not question_number:
+            return
+
+        user_answer = update.message.text
+        answer = questions[question_number][1]
+        
+        if user_answer.lower() in answer.lower():
+            update.message.reply_text('Правильно.')
+
+        else:
+            update.message.reply_text('Неправильно.')
+
+
+
 if __name__ == '__main__':
     load_dotenv()
     logging.basicConfig(level=logging.INFO, format=f'%(asctime)s - [%(levelname)s] <{logger.name}> %(message)s')
@@ -59,7 +75,6 @@ if __name__ == '__main__':
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler("start", start))
-
     dp.add_handler(MessageHandler(Filters.text, button))
 
     updater.start_polling()
