@@ -12,9 +12,15 @@ logger = logging.getLogger('QUIZ-Telegram')
 
 
 def start(bot, update):
-    keyboard = [['Новый вопрос', 'Сдаться'], ['Мой счет']]
-    reply_markup = telegram.ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-    update.message.reply_text(text="Привет! Поиграем?", reply_markup=reply_markup)
+    update.message.reply_text(text="Привет! Поиграем?", reply_markup=REPLY_MARKUP)
+
+
+def handle_new_question_request():
+    pass
+
+
+def handle_solution_attempt():
+    pass
 
 
 def button(bot, update):
@@ -46,10 +52,10 @@ def button(bot, update):
         answer = questions[question_number][1]
         
         if user_answer.lower() in answer.lower():
-            update.message.reply_text('Правильно.')
+            update.message.reply_text('Правильно.', reply_markup=REPLY_MARKUP)
 
         else:
-            update.message.reply_text('Неправильно.')
+            update.message.reply_text('Неправильно.', reply_markup=REPLY_MARKUP)
 
 
 
@@ -66,6 +72,9 @@ if __name__ == '__main__':
     REDIS_HOST = os.getenv('REDIS_HOST')
     REDIS_PORT = os.getenv('REDIS_PORT')
     REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
+
+    KEYBOARD = [['Новый вопрос', 'Сдаться'], ['Мой счет']]
+    REPLY_MARKUP = telegram.ReplyKeyboardMarkup(KEYBOARD, resize_keyboard=True)
 
     db = redis.Redis(REDIS_HOST, REDIS_PORT, password=REDIS_PASSWORD)
     logger.info('Redis connected.')
