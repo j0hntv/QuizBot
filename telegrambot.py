@@ -37,9 +37,21 @@ def handle_new_question_request(bot, update):
     db.hset(user_id, 'answer', answer)
     db.hincrby(user_id, 'total', 1)
 
+    return ANSWER
+
 
 def handle_solution_attempt(bot, update):
-    pass
+    user_id = update.message.from_user.id
+    correct_answer = db.hget(user_id, 'answer').decode().lower()
+    user_answer = update.message.text.lower()
+
+    if not user_answer in correct_answer:
+        update.message.reply_text('Неправильно.', reply_markup=REPLY_MARKUP)
+        return ANSWER
+
+    update.message.reply_text('Правильно.', reply_markup=REPLY_MARKUP)
+    db.hincrby(user_id, 'count', 1)
+    return PLAY
 
 
 def handle_count(bot, update):
@@ -89,9 +101,13 @@ if __name__ == '__main__':
             PLAY: [RegexHandler('Новый вопрос', handle_new_question_request),
                     RegexHandler('Мой счет', handle_count),
                     RegexHandler('Сдаться', handle_give_up)],
-            ANSWER: [],
-        },
 
+            ANSWER: [RegexHandler('Новый вопрос', handle_new_question_request),
+                    RegexHandler('Мой счет', handle_count),
+                    RegexHandler('Сдаться', handle_give_up),
+                    RegexHandler('.{1,}', handle_solution_attempt)],
+            
+        },
         fallbacks=[CommandHandler('cancel', cancel)]
     )
 
