@@ -4,7 +4,7 @@ import logging
 import redis
 from random import randrange
 from dotenv import load_dotenv
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, RegexHandler
 from questions import get_questions
 
 
@@ -12,51 +12,56 @@ logger = logging.getLogger('QUIZ-Telegram')
 
 
 def start(bot, update):
-    update.message.reply_text(text="Привет! Поиграем?", reply_markup=REPLY_MARKUP)
+    user = update.message.from_user.first_name
+    user_id = update.message.from_user.id
+
+    update.message.reply_text(text=f"Привет, {user}! Поиграем?", reply_markup=REPLY_MARKUP)
+
+    db.hset(user_id, 'total', 0)
+    db.hset(user_id, 'count', 0)
+    db.hset(user_id, 'answer', '')
+
+    return PLAY
 
 
-def handle_new_question_request():
+def handle_new_question_request(bot, update):
+    user_id = update.message.from_user.id
+
+    question_number = randrange(0, number_of_questions)
+    question = questions[question_number][0]
+    answer = questions[question_number][1]
+
+    update.message.reply_text(question)
+    update.message.reply_text(f'Ответ: {answer}')
+
+    db.hset(user_id, 'answer', answer)
+    db.hincrby(user_id, 'total', 1)
+
+
+def handle_solution_attempt(bot, update):
     pass
 
 
-def handle_solution_attempt():
-    pass
+def handle_count(bot, update):
+    user_id = update.message.from_user.id
+
+    total = db.hget(user_id, 'total').decode()
+    count = db.hget(user_id, 'count').decode()
+
+    update.message.reply_text(text=f"Задано вопросов: {total}\nПравильных ответов: {count}", reply_markup=REPLY_MARKUP)
 
 
-def button(bot, update):
-    if update.message.text == 'Новый вопрос':
-        question_number = randrange(0, number_of_questions)
+def handle_give_up(bot, update):
+    user_id = update.message.from_user.id
+    answer = db.hget(user_id, 'answer').decode()
 
-        question = questions[question_number][0]
-        answer = questions[question_number][1]
-
-        update.message.reply_text(question)
-
-        update.message.reply_text(f'Ответ: {answer}')
-        db.set(update.message.chat_id, question_number)
+    update.message.reply_text(f'Правильный ответ:\n{answer}')
 
 
-    elif update.message.text == 'Мой счет':
-        update.message.reply_text('Твой счет: ')
-        
-    elif update.message.text == 'Сдаться':
-        update.message.reply_text('Правильный ответ: ')
-
-    else:
-        chat_id = update.message.chat_id
-        question_number = int(db.get(chat_id))
-        if not question_number:
-            return
-
-        user_answer = update.message.text
-        answer = questions[question_number][1]
-        
-        if user_answer.lower() in answer.lower():
-            update.message.reply_text('Правильно.', reply_markup=REPLY_MARKUP)
-
-        else:
-            update.message.reply_text('Неправильно.', reply_markup=REPLY_MARKUP)
-
+def cancel(bot, update):
+    user = update.message.from_user.first_name
+    update.message.reply_text(text=f"Удачи, {user}!\nЧтобы начать сначала, нажми /start", reply_markup=telegram.ReplyKeyboardRemove())
+    return ConversationHandler.END
 
 
 if __name__ == '__main__':
@@ -76,15 +81,27 @@ if __name__ == '__main__':
     KEYBOARD = [['Новый вопрос', 'Сдаться'], ['Мой счет']]
     REPLY_MARKUP = telegram.ReplyKeyboardMarkup(KEYBOARD, resize_keyboard=True)
 
+    PLAY, ANSWER = range(2)
+
+    handler = ConversationHandler(
+        entry_points=[CommandHandler('start', start)],
+        states={
+            PLAY: [RegexHandler('Новый вопрос', handle_new_question_request),
+                    RegexHandler('Мой счет', handle_count),
+                    RegexHandler('Сдаться', handle_give_up)],
+            ANSWER: [],
+        },
+
+        fallbacks=[CommandHandler('cancel', cancel)]
+    )
+
     db = redis.Redis(REDIS_HOST, REDIS_PORT, password=REDIS_PASSWORD)
     logger.info('Redis connected.')
 
     updater = Updater(TELEGRAM_BOT_TOKEN)
 
     dp = updater.dispatcher
-
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(MessageHandler(Filters.text, button))
+    dp.add_handler(handler)
 
     updater.start_polling()
     updater.idle()
