@@ -1,9 +1,9 @@
 import os
-import telegram
 import logging
 import redis
 from random import randrange
 from dotenv import load_dotenv
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, RegexHandler
 from questions import get_questions
 
@@ -45,7 +45,7 @@ def handle_solution_attempt(bot, update):
     correct_answer = db.hget(user_id, 'answer').decode().lower()
     user_answer = update.message.text.lower()
 
-    if not user_answer in correct_answer:
+    if not user_answer == correct_answer:
         update.message.reply_text('Неправильно.', reply_markup=ANSWER_REPLY_MARKUP)
         return ANSWER
 
@@ -74,7 +74,7 @@ def handle_give_up(bot, update):
 
 def cancel(bot, update):
     user = update.message.from_user.first_name
-    update.message.reply_text(text=f"Удачи, {user}!\nЧтобы начать сначала, нажми /start", reply_markup=telegram.ReplyKeyboardRemove())
+    update.message.reply_text(text=f"Удачи, {user}!\nЧтобы начать сначала, нажми /start", reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
 
 
@@ -97,9 +97,9 @@ if __name__ == '__main__':
     ANSWER_KEYBOARD = [['Сдаться', 'Мой счет']]
     PLAY_KEYBOARD = [['Новый вопрос', 'Мой счет']]
 
-    START_REPLY_MARKUP = telegram.ReplyKeyboardMarkup(START_KEYBOARD, resize_keyboard=True)
-    ANSWER_REPLY_MARKUP = telegram.ReplyKeyboardMarkup(ANSWER_KEYBOARD, resize_keyboard=True)
-    PLAY_REPLY_MARKUP = telegram.ReplyKeyboardMarkup(PLAY_KEYBOARD, resize_keyboard=True)
+    START_REPLY_MARKUP = ReplyKeyboardMarkup(START_KEYBOARD, resize_keyboard=True)
+    ANSWER_REPLY_MARKUP = ReplyKeyboardMarkup(ANSWER_KEYBOARD, resize_keyboard=True)
+    PLAY_REPLY_MARKUP = ReplyKeyboardMarkup(PLAY_KEYBOARD, resize_keyboard=True)
 
     PLAY, ANSWER = range(2)
 
@@ -127,4 +127,3 @@ if __name__ == '__main__':
 
     updater.start_polling()
     updater.idle()
-    
