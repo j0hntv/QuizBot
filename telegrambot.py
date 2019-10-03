@@ -15,7 +15,7 @@ def start(bot, update):
     user = update.message.from_user.first_name
     user_id = update.message.from_user.id
 
-    update.message.reply_text(text=f"Привет, {user}! Поиграем?", reply_markup=REPLY_MARKUP)
+    update.message.reply_text(text=f"Привет, {user}! Поиграем?", reply_markup=START_REPLY_MARKUP)
 
     db.hset(user_id, 'total', 0)
     db.hset(user_id, 'count', 0)
@@ -31,7 +31,7 @@ def handle_new_question_request(bot, update):
     question = questions[question_number][0]
     answer = questions[question_number][1]
 
-    update.message.reply_text(question)
+    update.message.reply_text(question, reply_markup=ANSWER_REPLY_MARKUP)
     update.message.reply_text(f'Ответ: {answer}')
 
     db.hset(user_id, 'answer', answer)
@@ -46,10 +46,10 @@ def handle_solution_attempt(bot, update):
     user_answer = update.message.text.lower()
 
     if not user_answer in correct_answer:
-        update.message.reply_text('Неправильно.', reply_markup=REPLY_MARKUP)
+        update.message.reply_text('Неправильно.', reply_markup=ANSWER_REPLY_MARKUP)
         return ANSWER
 
-    update.message.reply_text('Правильно.', reply_markup=REPLY_MARKUP)
+    update.message.reply_text('Правильно.', reply_markup=PLAY_REPLY_MARKUP)
     db.hincrby(user_id, 'count', 1)
     return PLAY
 
@@ -60,14 +60,16 @@ def handle_count(bot, update):
     total = db.hget(user_id, 'total').decode()
     count = db.hget(user_id, 'count').decode()
 
-    update.message.reply_text(text=f"Задано вопросов: {total}\nПравильных ответов: {count}", reply_markup=REPLY_MARKUP)
+    update.message.reply_text(text=f"Задано вопросов: {total}\nПравильных ответов: {count}")
 
 
 def handle_give_up(bot, update):
     user_id = update.message.from_user.id
     answer = db.hget(user_id, 'answer').decode()
 
-    update.message.reply_text(f'Правильный ответ:\n{answer}')
+    update.message.reply_text(f'Правильный ответ: {answer}.\nЧтобы продолжить - нажми на Новый вопрос.', reply_markup=PLAY_REPLY_MARKUP)
+
+    return PLAY
 
 
 def cancel(bot, update):
@@ -90,8 +92,14 @@ if __name__ == '__main__':
     REDIS_PORT = os.getenv('REDIS_PORT')
     REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
 
-    KEYBOARD = [['Новый вопрос', 'Сдаться'], ['Мой счет']]
-    REPLY_MARKUP = telegram.ReplyKeyboardMarkup(KEYBOARD, resize_keyboard=True)
+
+    START_KEYBOARD = [['Новый вопрос']]
+    ANSWER_KEYBOARD = [['Сдаться', 'Мой счет']]
+    PLAY_KEYBOARD = [['Новый вопрос', 'Мой счет']]
+
+    START_REPLY_MARKUP = telegram.ReplyKeyboardMarkup(START_KEYBOARD, resize_keyboard=True)
+    ANSWER_REPLY_MARKUP = telegram.ReplyKeyboardMarkup(ANSWER_KEYBOARD, resize_keyboard=True)
+    PLAY_REPLY_MARKUP = telegram.ReplyKeyboardMarkup(PLAY_KEYBOARD, resize_keyboard=True)
 
     PLAY, ANSWER = range(2)
 
@@ -99,11 +107,9 @@ if __name__ == '__main__':
         entry_points=[CommandHandler('start', start)],
         states={
             PLAY: [RegexHandler('Новый вопрос', handle_new_question_request),
-                    RegexHandler('Мой счет', handle_count),
-                    RegexHandler('Сдаться', handle_give_up)],
+                    RegexHandler('Мой счет', handle_count)],
 
-            ANSWER: [RegexHandler('Новый вопрос', handle_new_question_request),
-                    RegexHandler('Мой счет', handle_count),
+            ANSWER: [RegexHandler('Мой счет', handle_count),
                     RegexHandler('Сдаться', handle_give_up),
                     RegexHandler('.{1,}', handle_solution_attempt)],
             
@@ -121,3 +127,4 @@ if __name__ == '__main__':
 
     updater.start_polling()
     updater.idle()
+    
