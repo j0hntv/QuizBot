@@ -45,12 +45,14 @@ def handle_solution_attempt(bot, update):
     correct_answer = db.hget(user_id, 'answer').decode().lower()
     user_answer = update.message.text.lower()
 
-    if not user_answer == correct_answer:
+    if not user_answer == correct_answer.strip('."'):
         update.message.reply_text('Неправильно.', reply_markup=ANSWER_REPLY_MARKUP)
+
         return ANSWER
 
-    update.message.reply_text('Правильно.', reply_markup=PLAY_REPLY_MARKUP)
+    update.message.reply_text('Правильно.\nЧтобы продолжить - нажми на Новый вопрос.', reply_markup=PLAY_REPLY_MARKUP)
     db.hincrby(user_id, 'count', 1)
+
     return PLAY
 
 
@@ -67,7 +69,7 @@ def handle_give_up(bot, update):
     user_id = update.message.from_user.id
     answer = db.hget(user_id, 'answer').decode()
 
-    update.message.reply_text(f'Правильный ответ: {answer}.\nЧтобы продолжить - нажми на Новый вопрос.', reply_markup=PLAY_REPLY_MARKUP)
+    update.message.reply_text(f'Правильный ответ: {answer}\nЧтобы продолжить - нажми на Новый вопрос.', reply_markup=PLAY_REPLY_MARKUP)
 
     return PLAY
 
@@ -75,6 +77,7 @@ def handle_give_up(bot, update):
 def cancel(bot, update):
     user = update.message.from_user.first_name
     update.message.reply_text(text=f"Удачи, {user}!\nЧтобы начать сначала, нажми /start", reply_markup=ReplyKeyboardRemove())
+    
     return ConversationHandler.END
 
 
