@@ -92,7 +92,6 @@ if __name__ == '__main__':
     REDIS_PORT = os.getenv('REDIS_PORT')
     REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
 
-
     START_KEYBOARD = [['Новый вопрос']]
     ANSWER_KEYBOARD = [['Сдаться', 'Мой счет']]
     PLAY_KEYBOARD = [['Новый вопрос', 'Мой счет']]
@@ -112,13 +111,18 @@ if __name__ == '__main__':
             ANSWER: [RegexHandler('Мой счет', handle_count),
                     RegexHandler('Сдаться', handle_give_up),
                     RegexHandler('.{1,}', handle_solution_attempt)],
-            
         },
         fallbacks=[CommandHandler('cancel', cancel)]
     )
 
-    db = redis.Redis(REDIS_HOST, REDIS_PORT, password=REDIS_PASSWORD)
-    logger.info('Redis connected.')
+    try:
+        db = redis.Redis(REDIS_HOST, REDIS_PORT, password=REDIS_PASSWORD)
+        db.get('None')
+        logger.info('Redis connected.')
+
+    except redis.exceptions.RedisError as error:
+        logger.error(f'Redis: {error}')
+
 
     updater = Updater(TELEGRAM_BOT_TOKEN)
 
