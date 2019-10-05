@@ -32,7 +32,7 @@ def handle_new_question_request(bot, update):
     answer = questions[question_number][1]
 
     update.message.reply_text(question, reply_markup=ANSWER_REPLY_MARKUP)
-    update.message.reply_text(f'Ответ: {answer}')
+    logger.info(f'<Вопрос> {question} <Ответ> {answer}')
 
     db.hset(user_id, 'answer', answer)
     db.hincrby(user_id, 'total', 1)
