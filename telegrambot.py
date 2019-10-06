@@ -4,7 +4,7 @@ import redis
 from random import randrange
 from dotenv import load_dotenv
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, RegexHandler
+from telegram.ext import Updater, CommandHandler, Filters, ConversationHandler, RegexHandler
 from questions import get_questions
 
 
