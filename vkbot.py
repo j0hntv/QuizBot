@@ -18,8 +18,14 @@ def start(event, vk_api):
     keyboard = VkKeyboard(one_time=True)
     keyboard.add_button('Новый вопрос', color=VkKeyboardColor.PRIMARY)
 
+    user_id = event.user_id
+
+    db.hset(user_id, 'total', 0)
+    db.hset(user_id, 'count', 0)
+    db.hset(user_id, 'answer', '')
+
     vk_api.messages.send(
-        user_id=event.user_id,
+        user_id=user_id,
         message='Привет! Поиграем?',
         keyboard=keyboard.get_keyboard(),
         random_id=get_random_id()
@@ -30,9 +36,35 @@ def new_question(event, vk_api):
     keyboard.add_button('Сдаться', color=VkKeyboardColor.NEGATIVE)
     keyboard.add_button('Мой счет', color=VkKeyboardColor.POSITIVE)
 
+    user_id = event.user_id
+
+    question_number = randrange(0, number_of_questions)
+    question = questions[question_number][0]
+    answer = questions[question_number][1]
+
+    db.hset(user_id, 'answer', answer)
+    db.hincrby(user_id, 'total', 1)
+
+    logger.info(f'<Вопрос> {question} <Ответ> {answer}')
+
+    vk_api.messages.send(
+        user_id=user_id,
+        message=question,
+        keyboard=keyboard.get_keyboard(),
+        random_id=get_random_id()
+    )
+
+def give_up(event, vk_api):
+    keyboard = VkKeyboard(one_time=True)
+    keyboard.add_button('Новый вопрос', color=VkKeyboardColor.PRIMARY)
+    keyboard.add_button('Мой счет', color=VkKeyboardColor.POSITIVE)
+    
+    user_id = event.user_id
+    answer = db.hget(user_id, 'answer').decode()
+
     vk_api.messages.send(
         user_id=event.user_id,
-        message='Привет! Поиграем?',
+        message=f'Правильный ответ: {answer}\nЧтобы продолжить - нажми на Новый вопрос.',
         keyboard=keyboard.get_keyboard(),
         random_id=get_random_id()
     )
@@ -71,4 +103,6 @@ if __name__ == "__main__":
                 start(event, vk_api)
             elif event.text == 'Новый вопрос':
                 new_question(event, vk_api)
+            elif event.text == 'Сдаться':
+                give_up(event, vk_api)
 
