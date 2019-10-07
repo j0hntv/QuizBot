@@ -70,6 +70,23 @@ def give_up(event, vk_api):
     )
 
 
+def count(event, vk_api):
+    keyboard = VkKeyboard(one_time=True)
+    keyboard.add_button('Сдаться', color=VkKeyboardColor.NEGATIVE)
+    keyboard.add_button('Мой счет', color=VkKeyboardColor.POSITIVE)
+
+    user_id = event.user_id
+    total = db.hget(user_id, 'total').decode()
+    count = db.hget(user_id, 'count').decode()
+
+    vk_api.messages.send(
+        user_id=event.user_id,
+        message=f'Задано вопросов: {total}\nПравильных ответов: {count}',
+        keyboard=keyboard.get_keyboard(),
+        random_id=get_random_id()
+    )
+
+
 if __name__ == "__main__":
     load_dotenv()
     logging.basicConfig(level=logging.INFO, format=f'%(asctime)s - [%(levelname)s] <{logger.name}> %(message)s')
@@ -105,4 +122,6 @@ if __name__ == "__main__":
                 new_question(event, vk_api)
             elif event.text == 'Сдаться':
                 give_up(event, vk_api)
+            elif event.text == 'Мой счет':
+                count(event, vk_api)
 
