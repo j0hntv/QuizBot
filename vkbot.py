@@ -17,7 +17,19 @@ logger = logging.getLogger('QUIZ-VK')
 def start(event, vk_api):
     keyboard = VkKeyboard(one_time=True)
     keyboard.add_button('Новый вопрос', color=VkKeyboardColor.PRIMARY)
-    
+
+    vk_api.messages.send(
+        user_id=event.user_id,
+        message='Привет! Поиграем?',
+        keyboard=keyboard.get_keyboard(),
+        random_id=get_random_id()
+    )
+
+def new_question(event, vk_api):
+    keyboard = VkKeyboard(one_time=True)
+    keyboard.add_button('Сдаться', color=VkKeyboardColor.NEGATIVE)
+    keyboard.add_button('Мой счет', color=VkKeyboardColor.POSITIVE)
+
     vk_api.messages.send(
         user_id=event.user_id,
         message='Привет! Поиграем?',
@@ -55,5 +67,8 @@ if __name__ == "__main__":
 
     for event in longpoll.listen():
         if event.type == VkEventType.MESSAGE_NEW and event.to_me:
-            start(event, vk_api)
+            if event.text == 'Начать':
+                start(event, vk_api)
+            elif event.text == 'Новый вопрос':
+                new_question(event, vk_api)
 
