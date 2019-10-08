@@ -1,7 +1,6 @@
 import os
 import logging
 import redis
-import random
 import vk_api
 from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
@@ -15,9 +14,6 @@ logger = logging.getLogger('QUIZ-VK')
 
 
 def start(event, vk_api):
-    keyboard = VkKeyboard(one_time=True)
-    keyboard.add_button('Новый вопрос', color=VkKeyboardColor.PRIMARY)
-
     user_id = event.user_id
 
     db.hset(user_id, 'total', 0)
@@ -31,11 +27,7 @@ def start(event, vk_api):
         random_id=get_random_id()
     )
 
-def new_question(event, vk_api):
-    keyboard = VkKeyboard(one_time=True)
-    keyboard.add_button('Сдаться', color=VkKeyboardColor.NEGATIVE)
-    keyboard.add_button('Мой счет', color=VkKeyboardColor.POSITIVE)
-
+def handle_new_question_request(event, vk_api):
     user_id = event.user_id
 
     question_number = randrange(0, number_of_questions)
@@ -55,14 +47,11 @@ def new_question(event, vk_api):
     )
 
 
-def answer(event, vk_api):
-    keyboard = VkKeyboard(one_time=True)
-    keyboard.add_button('Сдаться', color=VkKeyboardColor.NEGATIVE)
-    keyboard.add_button('Мой счет', color=VkKeyboardColor.POSITIVE)
+def handle_solution_attempt(event, vk_api):
 
     user_id = event.user_id
     correct_answer = db.hget(user_id, 'answer').decode().lower().strip('."')
-    user_answer = event.text.lower()
+    user_answer = event.text.strip(' ."').lower()
 
     if not user_answer == correct_answer:
         vk_api.messages.send(
@@ -73,10 +62,6 @@ def answer(event, vk_api):
         )
         return
 
-    keyboard = VkKeyboard(one_time=True)
-    keyboard.add_button('Новый вопрос', color=VkKeyboardColor.PRIMARY)
-    keyboard.add_button('Мой счет', color=VkKeyboardColor.POSITIVE)
-
     vk_api.messages.send(
         user_id=user_id,
         message='Правильно.\nЧтобы продолжить - нажми на Новый вопрос.',
@@ -86,27 +71,20 @@ def answer(event, vk_api):
     db.hincrby(user_id, 'count', 1)
 
 
-def give_up(event, vk_api):
-    keyboard = VkKeyboard(one_time=True)
-    keyboard.add_button('Новый вопрос', color=VkKeyboardColor.PRIMARY)
-    keyboard.add_button('Мой счет', color=VkKeyboardColor.POSITIVE)
-    
+def handle_give_up(event, vk_api):
     user_id = event.user_id
     answer = db.hget(user_id, 'answer').decode()
 
-    vk_api.messages.send(
-        user_id=event.user_id,
-        message=f'Правильный ответ: {answer}\nЧтобы продолжить - нажми на Новый вопрос.',
-        keyboard=keyboard.get_keyboard(),
-        random_id=get_random_id()
-    )
+    if answer:
+        vk_api.messages.send(
+            user_id=event.user_id,
+            message=f'Правильный ответ: {answer}\nЧтобы продолжить - нажми на Новый вопрос.',
+            keyboard=keyboard.get_keyboard(),
+            random_id=get_random_id()
+        )
 
 
-def count(event, vk_api):
-    keyboard = VkKeyboard(one_time=True)
-    keyboard.add_button('Сдаться', color=VkKeyboardColor.NEGATIVE)
-    keyboard.add_button('Мой счет', color=VkKeyboardColor.POSITIVE)
-
+def handle_count(event, vk_api):
     user_id = event.user_id
     total = db.hget(user_id, 'total').decode()
     count = db.hget(user_id, 'count').decode()
@@ -143,19 +121,31 @@ if __name__ == "__main__":
 
     vk_session = vk_api.VkApi(token=VK_TOKEN)
     vk_api = vk_session.get_api()
+
+    keyboard = VkKeyboard()
+    keyboard.add_button('Новый вопрос', color=VkKeyboardColor.PRIMARY)
+    keyboard.add_button('Сдаться', color=VkKeyboardColor.NEGATIVE)
+    keyboard.add_line()
+    keyboard.add_button('Мой счет', color=VkKeyboardColor.DEFAULT)
+
     longpoll = VkLongPoll(vk_session)
 
 
     for event in longpoll.listen():
         if event.type == VkEventType.MESSAGE_NEW and event.to_me:
             if event.text == 'Начать':
+                logger.info(event.text)
                 start(event, vk_api)
             elif event.text == 'Новый вопрос':
-                new_question(event, vk_api)
+                logger.info(event.text)
+                handle_new_question_request(event, vk_api)
             elif event.text == 'Сдаться':
-                give_up(event, vk_api)
+                logger.info(event.text)
+                handle_give_up(event, vk_api)
             elif event.text == 'Мой счет':
-                count(event, vk_api)
+                logger.info(event.text)
+                handle_count(event, vk_api)
             else:
-                answer(event, vk_api)
+                logger.info(event.text)
+                handle_solution_attempt(event, vk_api)
 
