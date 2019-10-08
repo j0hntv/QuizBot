@@ -54,6 +54,38 @@ def new_question(event, vk_api):
         random_id=get_random_id()
     )
 
+
+def answer(event, vk_api):
+    keyboard = VkKeyboard(one_time=True)
+    keyboard.add_button('Сдаться', color=VkKeyboardColor.NEGATIVE)
+    keyboard.add_button('Мой счет', color=VkKeyboardColor.POSITIVE)
+
+    user_id = event.user_id
+    correct_answer = db.hget(user_id, 'answer').decode().lower().strip('."')
+    user_answer = event.text.lower()
+
+    if not user_answer == correct_answer:
+        vk_api.messages.send(
+            user_id=user_id,
+            message='Неправильный ответ или неверная команда.',
+            keyboard=keyboard.get_keyboard(),
+            random_id=get_random_id()
+        )
+        return
+
+    keyboard = VkKeyboard(one_time=True)
+    keyboard.add_button('Новый вопрос', color=VkKeyboardColor.PRIMARY)
+    keyboard.add_button('Мой счет', color=VkKeyboardColor.POSITIVE)
+
+    vk_api.messages.send(
+        user_id=user_id,
+        message='Правильно.\nЧтобы продолжить - нажми на Новый вопрос.',
+        keyboard=keyboard.get_keyboard(),
+        random_id=get_random_id()
+    )
+    db.hincrby(user_id, 'count', 1)
+
+
 def give_up(event, vk_api):
     keyboard = VkKeyboard(one_time=True)
     keyboard.add_button('Новый вопрос', color=VkKeyboardColor.PRIMARY)
@@ -124,4 +156,6 @@ if __name__ == "__main__":
                 give_up(event, vk_api)
             elif event.text == 'Мой счет':
                 count(event, vk_api)
+            else:
+                answer(event, vk_api)
 
