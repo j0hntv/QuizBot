@@ -82,6 +82,8 @@ def handle_give_up(event, vk_api):
             keyboard=keyboard.get_keyboard(),
             random_id=get_random_id()
         )
+        
+    db.hset(user_id, 'answer', '')
 
 
 def handle_count(event, vk_api):
