@@ -65,8 +65,8 @@ def handle_solution_attempt(event, vk_api):
     vk_api.messages.send(
         user_id=user_id,
         message='''
-        Правильно.
-        Чтобы продолжить - нажми на Новый вопрос.''',
+Правильно.
+Чтобы продолжить - нажми на Новый вопрос.''',
         keyboard=keyboard.get_keyboard(),
         random_id=get_random_id()
     )
@@ -81,8 +81,8 @@ def handle_give_up(event, vk_api):
         vk_api.messages.send(
             user_id=event.user_id,
             message=f'''
-            Правильный ответ: {answer}
-            Чтобы продолжить - нажми на Новый вопрос.''',
+Правильный ответ: {answer}
+Чтобы продолжить - нажми на Новый вопрос.''',
             keyboard=keyboard.get_keyboard(),
             random_id=get_random_id()
         )
@@ -98,8 +98,8 @@ def handle_count(event, vk_api):
     vk_api.messages.send(
         user_id=event.user_id,
         message=f'''
-        Задано вопросов: {total}
-        Правильных ответов: {count}''',
+Задано вопросов: {total}
+Правильных ответов: {count}''',
         keyboard=keyboard.get_keyboard(),
         random_id=get_random_id()
     )
