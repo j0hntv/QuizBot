@@ -1,7 +1,7 @@
 import os
 import logging
 import redis
-from random import randrange
+from random import choice
 from dotenv import load_dotenv
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, CommandHandler, Filters, ConversationHandler, RegexHandler
@@ -27,9 +27,7 @@ def start(bot, update):
 def handle_new_question_request(bot, update):
     user_id = update.message.from_user.id
 
-    question_number = randrange(0, number_of_questions)
-    question = questions[question_number][0]
-    answer = questions[question_number][1]
+    question, answer = choice(questions)
 
     update.message.reply_text(question, reply_markup=ANSWER_REPLY_MARKUP)
     logger.info(f'<Вопрос> {question} <Ответ> {answer}')
