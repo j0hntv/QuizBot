@@ -64,7 +64,9 @@ def handle_solution_attempt(event, vk_api):
 
     vk_api.messages.send(
         user_id=user_id,
-        message='Правильно.\nЧтобы продолжить - нажми на Новый вопрос.',
+        message='''
+        Правильно.
+        Чтобы продолжить - нажми на Новый вопрос.''',
         keyboard=keyboard.get_keyboard(),
         random_id=get_random_id()
     )
@@ -78,7 +80,9 @@ def handle_give_up(event, vk_api):
     if answer:
         vk_api.messages.send(
             user_id=event.user_id,
-            message=f'Правильный ответ: {answer}\nЧтобы продолжить - нажми на Новый вопрос.',
+            message=f'''
+            Правильный ответ: {answer}
+            Чтобы продолжить - нажми на Новый вопрос.''',
             keyboard=keyboard.get_keyboard(),
             random_id=get_random_id()
         )
@@ -93,7 +97,9 @@ def handle_count(event, vk_api):
 
     vk_api.messages.send(
         user_id=event.user_id,
-        message=f'Задано вопросов: {total}\nПравильных ответов: {count}',
+        message=f'''
+        Задано вопросов: {total}
+        Правильных ответов: {count}''',
         keyboard=keyboard.get_keyboard(),
         random_id=get_random_id()
     )
@@ -136,7 +142,7 @@ if __name__ == "__main__":
     for event in longpoll.listen():
         if not (event.type == VkEventType.MESSAGE_NEW and event.to_me):
             continue
-        
+
         if event.text == 'Начать':
             logger.info(event.text)
             start(event, vk_api)
