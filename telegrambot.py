@@ -17,8 +17,8 @@ def start(bot, update):
 
     update.message.reply_text(text=f"Привет, {user}! Поиграем?", reply_markup=START_REPLY_MARKUP)
 
-    db.hset(user_id, 'total', 0)
-    db.hset(user_id, 'count', 0)
+    db.hset(user_id, 'number_of_questions_asked', 0)
+    db.hset(user_id, 'number_of_right_answers', 0)
     db.hset(user_id, 'answer', '')
 
     return PLAY
@@ -35,7 +35,7 @@ def handle_new_question_request(bot, update):
     logger.info(f'<Вопрос> {question} <Ответ> {answer}')
 
     db.hset(user_id, 'answer', answer)
-    db.hincrby(user_id, 'total', 1)
+    db.hincrby(user_id, 'number_of_questions_asked', 1)
 
     return ANSWER
 
@@ -54,7 +54,7 @@ def handle_solution_attempt(bot, update):
 Правильно.
 Чтобы продолжить - нажми на Новый вопрос.''',
     reply_markup=PLAY_REPLY_MARKUP)
-    db.hincrby(user_id, 'count', 1)
+    db.hincrby(user_id, 'number_of_right_answers', 1)
 
     return PLAY
 
@@ -62,12 +62,12 @@ def handle_solution_attempt(bot, update):
 def handle_count(bot, update):
     user_id = update.message.from_user.id
 
-    total = db.hget(user_id, 'total').decode()
-    count = db.hget(user_id, 'count').decode()
+    number_of_questions_asked = db.hget(user_id, 'number_of_questions_asked').decode()
+    number_of_right_answers = db.hget(user_id, 'number_of_right_answers').decode()
 
     update.message.reply_text(text=f'''
-Задано вопросов: {total}
-Правильных ответов: {count}''')
+Задано вопросов: {number_of_questions_asked}
+Правильных ответов: {number_of_right_answers}''')
 
 
 def handle_give_up(bot, update):
@@ -140,8 +140,8 @@ if __name__ == '__main__':
 
     updater = Updater(TELEGRAM_BOT_TOKEN)
 
-    dp = updater.dispatcher
-    dp.add_handler(handler)
+    dispatcher = updater.dispatcher
+    dispatcher.add_handler(handler)
 
     updater.start_polling()
     updater.idle()
