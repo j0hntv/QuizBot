@@ -40,10 +40,10 @@ def handle_new_question_request(bot, update):
 
 def handle_solution_attempt(bot, update):
     user_id = update.message.from_user.id
-    correct_answer = db.hget(user_id, 'answer').decode().lower()
+    correct_answer = db.hget(user_id, 'answer').decode().lower().strip('."')
     user_answer = update.message.text.lower()
 
-    if not user_answer == correct_answer.strip('."'):
+    if not user_answer == correct_answer:
         update.message.reply_text('Неправильно.', reply_markup=ANSWER_REPLY_MARKUP)
 
         return ANSWER
