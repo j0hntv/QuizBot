@@ -50,7 +50,10 @@ def handle_solution_attempt(bot, update):
 
         return ANSWER
 
-    update.message.reply_text('Правильно.\nЧтобы продолжить - нажми на Новый вопрос.', reply_markup=PLAY_REPLY_MARKUP)
+    update.message.reply_text('''
+Правильно.
+Чтобы продолжить - нажми на Новый вопрос.''',
+    reply_markup=PLAY_REPLY_MARKUP)
     db.hincrby(user_id, 'count', 1)
 
     return PLAY
@@ -62,21 +65,29 @@ def handle_count(bot, update):
     total = db.hget(user_id, 'total').decode()
     count = db.hget(user_id, 'count').decode()
 
-    update.message.reply_text(text=f"Задано вопросов: {total}\nПравильных ответов: {count}")
+    update.message.reply_text(text=f'''
+Задано вопросов: {total}
+Правильных ответов: {count}''')
 
 
 def handle_give_up(bot, update):
     user_id = update.message.from_user.id
     answer = db.hget(user_id, 'answer').decode()
 
-    update.message.reply_text(f'Правильный ответ: {answer}\nЧтобы продолжить - нажми на Новый вопрос.', reply_markup=PLAY_REPLY_MARKUP)
+    update.message.reply_text(f'''
+Правильный ответ: {answer}
+Чтобы продолжить - нажми на Новый вопрос.''',
+    reply_markup=PLAY_REPLY_MARKUP)
 
     return PLAY
 
 
 def cancel(bot, update):
     user = update.message.from_user.first_name
-    update.message.reply_text(text=f"Удачи, {user}!\nЧтобы начать сначала, нажми /start", reply_markup=ReplyKeyboardRemove())
+    update.message.reply_text(text=f'''
+Удачи, {user}!
+Чтобы начать сначала, нажми /start''',
+    reply_markup=ReplyKeyboardRemove())
     
     return ConversationHandler.END
 
