@@ -5,7 +5,7 @@ import vk_api
 from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.utils import get_random_id
-from random import randrange
+from random import choice
 from dotenv import load_dotenv
 from questions import get_questions
 
@@ -30,9 +30,7 @@ def start(event, vk_api):
 def handle_new_question_request(event, vk_api):
     user_id = event.user_id
 
-    question_number = randrange(0, number_of_questions)
-    question = questions[question_number][0]
-    answer = questions[question_number][1]
+    question, answer = choice(questions)
 
     db.hset(user_id, 'answer', answer)
     db.hincrby(user_id, 'number_of_questions_asked', 1)
