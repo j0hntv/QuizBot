@@ -16,8 +16,8 @@ logger = logging.getLogger('QUIZ-VK')
 def start(event, vk_api):
     user_id = event.user_id
 
-    db.hset(user_id, 'total', 0)
-    db.hset(user_id, 'count', 0)
+    db.hset(user_id, 'number_of_questions_asked', 0)
+    db.hset(user_id, 'number_of_right_answers', 0)
     db.hset(user_id, 'answer', '')
 
     vk_api.messages.send(
@@ -35,7 +35,7 @@ def handle_new_question_request(event, vk_api):
     answer = questions[question_number][1]
 
     db.hset(user_id, 'answer', answer)
-    db.hincrby(user_id, 'total', 1)
+    db.hincrby(user_id, 'number_of_questions_asked', 1)
 
     logger.info(f'<Вопрос> {question} <Ответ> {answer}')
 
@@ -70,7 +70,7 @@ def handle_solution_attempt(event, vk_api):
         keyboard=keyboard.get_keyboard(),
         random_id=get_random_id()
     )
-    db.hincrby(user_id, 'count', 1)
+    db.hincrby(user_id, 'number_of_right_answers', 1)
 
 
 def handle_give_up(event, vk_api):
@@ -92,14 +92,14 @@ def handle_give_up(event, vk_api):
 
 def handle_count(event, vk_api):
     user_id = event.user_id
-    total = db.hget(user_id, 'total').decode()
-    count = db.hget(user_id, 'count').decode()
+    number_of_questions_asked = db.hget(user_id, 'number_of_questions_asked').decode()
+    number_of_right_answers = db.hget(user_id, 'number_of_right_answers').decode()
 
     vk_api.messages.send(
         user_id=event.user_id,
         message=f'''
-Задано вопросов: {total}
-Правильных ответов: {count}''',
+Задано вопросов: {number_of_questions_asked}
+Правильных ответов: {number_of_right_answers}''',
         keyboard=keyboard.get_keyboard(),
         random_id=get_random_id()
     )
