@@ -1,6 +1,7 @@
 import os
 import logging
 import redis
+import textwrap
 from random import choice
 from dotenv import load_dotenv
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
@@ -48,10 +49,11 @@ def handle_solution_attempt(bot, update):
 
         return ANSWER
 
-    update.message.reply_text('''
-Правильно.
-Чтобы продолжить - нажми на Новый вопрос.''',
-    reply_markup=PLAY_REPLY_MARKUP)
+    message = textwrap.dedent('''\
+        Правильно.
+        Чтобы продолжить - нажми на Новый вопрос.''')
+
+    update.message.reply_text(text=message, reply_markup=PLAY_REPLY_MARKUP)
     db.hincrby(user_id, 'number_of_right_answers', 1)
 
     return PLAY
@@ -63,29 +65,34 @@ def handle_count(bot, update):
     number_of_questions_asked = db.hget(user_id, 'number_of_questions_asked').decode()
     number_of_right_answers = db.hget(user_id, 'number_of_right_answers').decode()
 
-    update.message.reply_text(text=f'''
-Задано вопросов: {number_of_questions_asked}
-Правильных ответов: {number_of_right_answers}''')
+    message = textwrap.dedent(f'''\
+        Задано вопросов: {number_of_questions_asked}
+        Правильных ответов: {number_of_right_answers}''')
+
+    update.message.reply_text(text=message)
 
 
 def handle_give_up(bot, update):
     user_id = update.message.from_user.id
     answer = db.hget(user_id, 'answer').decode()
 
-    update.message.reply_text(f'''
-Правильный ответ: {answer}
-Чтобы продолжить - нажми на Новый вопрос.''',
-    reply_markup=PLAY_REPLY_MARKUP)
+    message = textwrap.dedent(f'''\
+        Правильный ответ: {answer}
+        Чтобы продолжить - нажми на Новый вопрос.''')
+
+    update.message.reply_text(text=message, reply_markup=PLAY_REPLY_MARKUP)
 
     return PLAY
 
 
 def cancel(bot, update):
     user = update.message.from_user.first_name
-    update.message.reply_text(text=f'''
-Удачи, {user}!
-Чтобы начать сначала, нажми /start''',
-    reply_markup=ReplyKeyboardRemove())
+
+    message = textwrap.dedent(f'''\
+        Удачи, {user}!
+        Чтобы начать сначала, нажми /start''')
+
+    update.message.reply_text(text=message, reply_markup=ReplyKeyboardRemove())
     
     return ConversationHandler.END
 
