@@ -3,10 +3,10 @@ import logging
 import redis
 import textwrap
 import vk_api
+import random
 from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.utils import get_random_id
-from random import choice
 from dotenv import load_dotenv
 from questions import get_questions
 
@@ -31,7 +31,7 @@ def start(event, vk_api):
 def handle_new_question_request(event, vk_api):
     user_id = event.user_id
 
-    question, answer = choice(questions)
+    question, answer = random.choice(questions)
 
     db.hset(user_id, 'answer', answer)
     db.hincrby(user_id, 'number_of_questions_asked', 1)
@@ -49,7 +49,7 @@ def handle_new_question_request(event, vk_api):
 def handle_solution_attempt(event, vk_api):
 
     user_id = event.user_id
-    correct_answer = db.hget(user_id, 'answer').decode().lower().strip('."')
+    correct_answer = db.hget(user_id, 'answer').lower().strip('."')
     user_answer = event.text.strip(' ."').lower()
 
     if not user_answer == correct_answer:
@@ -76,7 +76,7 @@ def handle_solution_attempt(event, vk_api):
 
 def handle_give_up(event, vk_api):
     user_id = event.user_id
-    answer = db.hget(user_id, 'answer').decode()
+    answer = db.hget(user_id, 'answer')
 
     if answer:
 
@@ -96,8 +96,8 @@ def handle_give_up(event, vk_api):
 
 def handle_count(event, vk_api):
     user_id = event.user_id
-    number_of_questions_asked = db.hget(user_id, 'number_of_questions_asked').decode()
-    number_of_right_answers = db.hget(user_id, 'number_of_right_answers').decode()
+    number_of_questions_asked = db.hget(user_id, 'number_of_questions_asked')
+    number_of_right_answers = db.hget(user_id, 'number_of_right_answers')
 
     message = textwrap.dedent(f'''\
         Задано вопросов: {number_of_questions_asked}
@@ -126,7 +126,9 @@ if __name__ == "__main__":
     REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
 
     try:
-        db = redis.Redis(REDIS_HOST, REDIS_PORT, password=REDIS_PASSWORD)
+        db = redis.Redis(REDIS_HOST, REDIS_PORT,
+            password=REDIS_PASSWORD, decode_responses=True)
+
         db.get('None')
         logger.info('Redis connected.')
 
