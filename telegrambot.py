@@ -2,7 +2,7 @@ import os
 import logging
 import redis
 import textwrap
-from random import choice
+import random
 from dotenv import load_dotenv
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, CommandHandler, Filters, ConversationHandler, RegexHandler
@@ -28,7 +28,7 @@ def start(bot, update):
 def handle_new_question_request(bot, update):
     user_id = update.message.from_user.id
 
-    question, answer = choice(questions)
+    question, answer = random.choice(questions)
 
     update.message.reply_text(question, reply_markup=ANSWER_REPLY_MARKUP)
     logger.info(f'<Вопрос> {question} <Ответ> {answer}')
@@ -41,7 +41,7 @@ def handle_new_question_request(bot, update):
 
 def handle_solution_attempt(bot, update):
     user_id = update.message.from_user.id
-    correct_answer = db.hget(user_id, 'answer').decode().lower().strip('."')
+    correct_answer = db.hget(user_id, 'answer').lower().strip('."')
     user_answer = update.message.text.lower()
 
     if not user_answer == correct_answer:
@@ -62,8 +62,8 @@ def handle_solution_attempt(bot, update):
 def handle_count(bot, update):
     user_id = update.message.from_user.id
 
-    number_of_questions_asked = db.hget(user_id, 'number_of_questions_asked').decode()
-    number_of_right_answers = db.hget(user_id, 'number_of_right_answers').decode()
+    number_of_questions_asked = db.hget(user_id, 'number_of_questions_asked')
+    number_of_right_answers = db.hget(user_id, 'number_of_right_answers')
 
     message = textwrap.dedent(f'''\
         Задано вопросов: {number_of_questions_asked}
@@ -74,7 +74,7 @@ def handle_count(bot, update):
 
 def handle_give_up(bot, update):
     user_id = update.message.from_user.id
-    answer = db.hget(user_id, 'answer').decode()
+    answer = db.hget(user_id, 'answer')
 
     message = textwrap.dedent(f'''\
         Правильный ответ: {answer}
@@ -135,7 +135,9 @@ if __name__ == '__main__':
     )
 
     try:
-        db = redis.Redis(REDIS_HOST, REDIS_PORT, password=REDIS_PASSWORD)
+        db = redis.Redis(REDIS_HOST, REDIS_PORT,
+            password=REDIS_PASSWORD, decode_responses=True)
+
         db.get('None')
         logger.info('Redis connected.')
 
