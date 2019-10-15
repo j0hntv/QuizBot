@@ -1,6 +1,7 @@
 import os
 import logging
 import redis
+import textwrap
 import vk_api
 from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
@@ -60,11 +61,13 @@ def handle_solution_attempt(event, vk_api):
         )
         return
 
+    message = textwrap.dedent('''\
+        Правильно.
+        Чтобы продолжить - нажми на Новый вопрос.''')
+
     vk_api.messages.send(
         user_id=user_id,
-        message='''
-Правильно.
-Чтобы продолжить - нажми на Новый вопрос.''',
+        message=message,
         keyboard=keyboard.get_keyboard(),
         random_id=get_random_id()
     )
@@ -76,11 +79,14 @@ def handle_give_up(event, vk_api):
     answer = db.hget(user_id, 'answer').decode()
 
     if answer:
+
+        message = textwrap.dedent(f'''\
+            Правильный ответ: {answer}
+            Чтобы продолжить - нажми на Новый вопрос.''')
+
         vk_api.messages.send(
             user_id=event.user_id,
-            message=f'''
-Правильный ответ: {answer}
-Чтобы продолжить - нажми на Новый вопрос.''',
+            message=message,
             keyboard=keyboard.get_keyboard(),
             random_id=get_random_id()
         )
@@ -93,11 +99,13 @@ def handle_count(event, vk_api):
     number_of_questions_asked = db.hget(user_id, 'number_of_questions_asked').decode()
     number_of_right_answers = db.hget(user_id, 'number_of_right_answers').decode()
 
+    message = textwrap.dedent(f'''\
+        Задано вопросов: {number_of_questions_asked}
+        Правильных ответов: {number_of_right_answers}''')
+
     vk_api.messages.send(
         user_id=event.user_id,
-        message=f'''
-Задано вопросов: {number_of_questions_asked}
-Правильных ответов: {number_of_right_answers}''',
+        message=message,
         keyboard=keyboard.get_keyboard(),
         random_id=get_random_id()
     )
